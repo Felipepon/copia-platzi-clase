@@ -1,0 +1,42 @@
+pipeline {
+    agent any
+
+    options {
+        timeout(time: 10, unit: 'MINUTES')
+    }
+
+    environment {
+        PROJECT_PATH = "webapp"
+    }
+
+    stages {
+
+        stage('Railway Login') {
+            steps {
+                withCredentials([
+                    string(credentialsId: 'RailwayToken', variable: 'RAILWAY_TOKEN')
+                ]) {
+                    sh '''
+                        railway login --token $RAILWAY_TOKEN
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                dir("${PROJECT_PATH}") {
+                    sh '''
+                        railway up
+                    '''
+                }
+            }
+        }
+    }
+
+    post {
+        always {
+            cleanWs()
+        }
+    }
+}
