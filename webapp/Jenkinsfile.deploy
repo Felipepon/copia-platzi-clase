@@ -11,24 +11,35 @@ pipeline {
 
     stages {
 
-        stage('Railway Login') {
-            steps {
-                withCredentials([
-                    string(credentialsId: 'RailwayToken', variable: 'RAILWAY_TOKEN')
-                ]) {
-                    sh '''
-                        railway login --token $RAILWAY_TOKEN
-                    '''
-                }
-            }
-        }
-
-        stage('Deploy') {
+        stage('Deploy to Railway') {
             steps {
                 dir("${PROJECT_PATH}") {
-                    sh '''
-                        railway up
-                    '''
+
+                    withCredentials([
+                        string(credentialsId: 'RailwayToken', variable: 'RAILWAY_TOKEN')
+                    ]) {
+
+                        sh '''
+                            echo "Desplegando en Railway..."
+
+                            # Guardar el token en una variable local
+                            TOKEN=$RAILWAY_TOKEN
+
+                            railway status
+
+                            railway up
+
+                            # Obtener la URL del servicio
+                            RESULT_URL=$(railway domain)
+
+                            echo "Aplicación desplegada en: $RESULT_URL"
+
+                            # Acceptance Test
+                            curl -s "$RESULT_URL" | grep "TextoEsperado"
+
+                            echo "Acceptance Test OK"
+                        '''
+                    }
                 }
             }
         }
